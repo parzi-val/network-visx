@@ -11,16 +11,23 @@
     circle { fill: steelblue; stroke: white; stroke-width: 2px; cursor: grab; }
     line { stroke: white; stroke-width: 2px; opacity: 0.6; }
     text { fill: white; font-size: 12px; pointer-events: none; }
+    .slider-container { margin: 20px; }
   </style>
 </head>
 <body>
   <h1>Network Discovery Graph</h1>
+  <div class="slider-container">
+    <label for="speedSlider">Node Addition Speed (ms): <span id="speedValue">1000</span></label>
+    <input type="range" id="speedSlider" min="100" max="5000" step="100" value="1000">
+  </div>
   <svg id="graph"></svg>
 
   <script>
     const width = window.innerWidth, height = 500;
     const svg = d3.select("#graph").attr("width", width).attr("height", height);
-
+    
+    const graphGroup = svg.append("g").attr("id", "graphGroup");
+    
     let nodes = []; 
     let links = []; 
 
@@ -31,8 +38,8 @@
       .force("collision", d3.forceCollide(40))
       .on("tick", updateGraph);
 
-    const linkGroup = svg.append("g").attr("class", "links");
-    const nodeGroup = svg.append("g").attr("class", "nodes");
+    const linkGroup = graphGroup.append("g").attr("class", "links");
+    const nodeGroup = graphGroup.append("g").attr("class", "nodes");
 
     function updateGraph() {
       let link = linkGroup.selectAll("line").data(links);
@@ -98,10 +105,30 @@
       simulation.alpha(1).restart();
     }
 
-    setInterval(() => {
+    let intervalTime = 1000; 
+    let nodeInterval = setInterval(() => {
       const ip = `192.168.1.${Math.floor(Math.random() * 255)}`;
       addNode(ip);
-    }, 3000);
+    }, intervalTime);
+
+    document.getElementById("speedSlider").addEventListener("input", function() {
+      intervalTime = this.value;
+      document.getElementById("speedValue").textContent = intervalTime;
+      clearInterval(nodeInterval);
+      nodeInterval = setInterval(() => {
+        const ip = `192.168.1.${Math.floor(Math.random() * 255)}`;
+        addNode(ip);
+      }, intervalTime);
+    });
+
+    // Rotation Animation
+    let angle = 0;
+    function rotateGraph() {
+      angle += 0.1; // Adjust this value to control speed
+      graphGroup.attr("transform", `translate(${width / 2}, ${height / 2}) rotate(${angle}) translate(${-width / 2}, ${-height / 2})`);
+      requestAnimationFrame(rotateGraph);
+    }
+    rotateGraph();
   </script>
 </body>
 </html>
