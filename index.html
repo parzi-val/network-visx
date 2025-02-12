@@ -20,14 +20,14 @@
     <label for="speedSlider">Node Addition Speed (ms): <span id="speedValue">1000</span></label>
     <input type="range" id="speedSlider" min="100" max="5000" step="100" value="1000">
   </div>
-  <svg id="graph"></svg>
+  <svg id="graph" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
 
   <script>
-    const width = window.innerWidth, height = 500;
-    const svg = d3.select("#graph").attr("width", width).attr("height", height);
+    const width = 1000, height = 1000;
+    const svg = d3.select("#graph").attr("width", "100%").attr("height", "500px");
     
     const graphGroup = svg.append("g").attr("id", "graphGroup");
-    
+
     let nodes = []; 
     let links = []; 
 
@@ -71,6 +71,8 @@
         .text(d => d.id);
 
       text.exit().remove();
+
+      adjustZoom();
     }
 
     function drag(simulation) {
@@ -124,11 +126,26 @@
     // Rotation Animation
     let angle = 0;
     function rotateGraph() {
-      angle += 0.1; // Adjust this value to control speed
+      angle += 0.1; 
       graphGroup.attr("transform", `translate(${width / 2}, ${height / 2}) rotate(${angle}) translate(${-width / 2}, ${-height / 2})`);
       requestAnimationFrame(rotateGraph);
     }
     rotateGraph();
+
+    // Auto Zoom Out as Nodes Increase
+    function adjustZoom() {
+      let nodeCount = nodes.length;
+      let scaleFactor = 1;
+
+      if (nodeCount > 20) scaleFactor = 0.9;
+      if (nodeCount > 40) scaleFactor = 0.8;
+      if (nodeCount > 60) scaleFactor = 0.7;
+      if (nodeCount > 100) scaleFactor = 0.5;
+      if (nodeCount > 200) scaleFactor = 0.3;
+
+      let viewSize = width / scaleFactor;
+      svg.attr("viewBox", `${width / 2 - viewSize / 2} ${height / 2 - viewSize / 2} ${viewSize} ${viewSize}`);
+    }
   </script>
 </body>
 </html>
