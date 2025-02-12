@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Network Discovery Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { background-color: #1e1e1e; color: white; font-family: sans-serif; text-align: center; }
+    svg { width: 100%; height: 500px; display: block; margin: auto; }
+    circle { fill: steelblue; stroke: white; stroke-width: 2px; cursor: grab; }
+    line { stroke: white; stroke-width: 2px; opacity: 0.6; }
+    text { fill: white; font-size: 12px; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h1>Network Discovery Graph</h1>
+  <svg id="graph"></svg>
+
+  <script>
+    const width = window.innerWidth, height = 500;
+    const svg = d3.select("#graph").attr("width", width).attr("height", height);
+
+    let nodes = []; 
+    let links = []; 
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+      .force("charge", d3.forceManyBody().strength(-100))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide(40))
+      .on("tick", updateGraph);
+
+    const linkGroup = svg.append("g").attr("class", "links");
+    const nodeGroup = svg.append("g").attr("class", "nodes");
+
+    function updateGraph() {
+      let link = linkGroup.selectAll("line").data(links);
+      link.enter().append("line").merge(link)
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+      link.exit().remove();
+
+      let node = nodeGroup.selectAll("circle").data(nodes);
+      let enterNodes = node.enter().append("circle")
+        .attr("r", 12)
+        .call(drag(simulation));
+
+      node.merge(enterNodes)
+        .attr("cx", d => d.x)
+        .attr("cy", d => d.y);
+
+      node.exit().remove();
+
+      let text = nodeGroup.selectAll("text").data(nodes);
+      text.enter().append("text")
+        .attr("dy", -15)
+        .attr("text-anchor", "middle")
+        .merge(text)
+        .attr("x", d => d.x)
+        .attr("y", d => d.y)
+        .text(d => d.id);
+
+      text.exit().remove();
+    }
+
+    function drag(simulation) {
+      return d3.drag()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        });
+    }
+
+    function addNode(ip) {
+      let newNode = { id: ip, x: Math.random() * width, y: Math.random() * height };
+      nodes.push(newNode);
+
+      if (nodes.length > 1) {
+        let target = nodes[Math.floor(Math.random() * (nodes.length - 1))];
+        links.push({ source: newNode, target: target });
+      }
+
+      simulation.nodes(nodes);
+      simulation.force("link").links(links);
+      simulation.alpha(1).restart();
+    }
+
+    setInterval(() => {
+      const ip = `192.168.1.${Math.floor(Math.random() * 255)}`;
+      addNode(ip);
+    }, 3000);
+  </script>
+</body>
+</html>
